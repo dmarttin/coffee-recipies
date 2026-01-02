@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { getRecipeByIdWithLang } from '@/lib/use-recipes';
 import { BrewingTimer } from '@/components/brewing-timer';
-import { TikTokBrewingTimer } from '@/components/tiktok-brewing-timer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -13,6 +13,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, Coffee, Droplets, Thermometer, Clock, Lightbulb, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/language-context';
+
+// Dynamic import to avoid SSR issues with framer-motion
+const TikTokBrewingTimer = dynamic(
+  () => import('@/components/tiktok-brewing-timer').then((mod) => mod.TikTokBrewingTimer),
+  { ssr: false }
+);
 
 export function RecipePageClient() {
   const params = useParams();
