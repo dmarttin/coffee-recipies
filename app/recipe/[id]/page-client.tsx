@@ -1,14 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getRecipeByIdWithLang } from '@/lib/use-recipes';
 import { BrewingTimer } from '@/components/brewing-timer';
+import { TikTokBrewingTimer } from '@/components/tiktok-brewing-timer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Coffee, Droplets, Thermometer, Clock, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Coffee, Droplets, Thermometer, Clock, Lightbulb, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/language-context';
 
@@ -17,6 +19,7 @@ export function RecipePageClient() {
   const id = params.id as string;
   const { t, language } = useLanguage();
   const recipe = getRecipeByIdWithLang(id, language);
+  const [showTikTokView, setShowTikTokView] = useState(false);
 
   if (!recipe) {
     notFound();
@@ -108,9 +111,28 @@ export function RecipePageClient() {
 
         {/* Brewing Timer */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">{t('brewingTimer')}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">{t('brewingTimer')}</h2>
+            <Button
+              onClick={() => setShowTikTokView(true)}
+              variant="default"
+              className="gap-2"
+            >
+              <Smartphone className="w-4 h-4" />
+              {t('fullScreen')}
+            </Button>
+          </div>
           <BrewingTimer steps={recipe.steps} />
         </div>
+
+        {/* TikTok-Style Full Screen View */}
+        {showTikTokView && (
+          <TikTokBrewingTimer
+            steps={recipe.steps}
+            onClose={() => setShowTikTokView(false)}
+            onComplete={() => setShowTikTokView(false)}
+          />
+        )}
 
         {/* Tips */}
         {recipe.tips && recipe.tips.length > 0 && (

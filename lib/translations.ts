@@ -25,6 +25,7 @@ export const translations = {
     backToRecipes: 'Back to Recipes',
     brewingTimer: 'Brewing Timer',
     proTips: 'Pro Tips',
+    fullScreen: 'Full Screen',
 
     // Timer controls
     start: 'Start',
@@ -79,6 +80,7 @@ export const translations = {
     backToRecipes: 'Volver a Recetas',
     brewingTimer: 'Temporizador de Preparación',
     proTips: 'Consejos Profesionales',
+    fullScreen: 'Pantalla Completa',
 
     // Timer controls
     start: 'Iniciar',
