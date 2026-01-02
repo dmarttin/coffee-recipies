@@ -4,6 +4,7 @@ export interface RecipeStep {
   description: string;
   duration: number; // in seconds
   action: 'pour' | 'wait' | 'stir' | 'press' | 'flip';
+  hasTimer?: boolean; // if true, step requires timer; if false, step is manual (default: true for backward compatibility)
 }
 
 export interface Recipe {

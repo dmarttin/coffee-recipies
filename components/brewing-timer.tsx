@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Check, Clock } from 'lucide-react';
+import { useLanguage } from '@/contexts/language-context';
 
 interface BrewingTimerProps {
   steps: RecipeStep[];
@@ -14,6 +15,7 @@ interface BrewingTimerProps {
 }
 
 export function BrewingTimer({ steps, onComplete }: BrewingTimerProps) {
+  const { t } = useLanguage();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(steps[0]?.duration || 0);
   const [isRunning, setIsRunning] = useState(false);
@@ -21,18 +23,22 @@ export function BrewingTimer({ steps, onComplete }: BrewingTimerProps) {
 
   const currentStep = steps[currentStepIndex];
   const totalSteps = steps.length;
+  const hasTimer = currentStep?.hasTimer !== false; // Default to true for backward compatibility
 
-  // Timer effect with proper cleanup
+  // Timer effect with proper cleanup - only runs for steps with timers
   useEffect(() => {
-    if (!isRunning || isPaused || !currentStep) return;
+    if (!isRunning || isPaused || !currentStep || !hasTimer) return;
 
     const intervalId = setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev <= 1) {
           // Step complete - move to next or finish
           if (currentStepIndex < totalSteps - 1) {
-            setCurrentStepIndex((prevIndex) => prevIndex + 1);
-            return steps[currentStepIndex + 1].duration;
+            const nextStepIndex = currentStepIndex + 1;
+            setCurrentStepIndex(nextStepIndex);
+            setIsRunning(false); // Stop timer, user needs to start next step
+            setIsPaused(false);
+            return steps[nextStepIndex].duration;
           } else {
             // All steps complete
             setIsRunning(false);
@@ -46,7 +52,7 @@ export function BrewingTimer({ steps, onComplete }: BrewingTimerProps) {
 
     // Cleanup function to prevent memory leaks
     return () => clearInterval(intervalId);
-  }, [isRunning, isPaused, currentStepIndex, steps, totalSteps, currentStep, onComplete]);
+  }, [isRunning, isPaused, currentStepIndex, steps, totalSteps, currentStep, onComplete, hasTimer]);
 
   const handleStart = () => {
     setIsRunning(true);
@@ -62,6 +68,29 @@ export function BrewingTimer({ steps, onComplete }: BrewingTimerProps) {
     setIsPaused(false);
     setCurrentStepIndex(0);
     setTimeRemaining(steps[0]?.duration || 0);
+  };
+
+  const handlePrevious = () => {
+    if (currentStepIndex > 0) {
+      const prevStepIndex = currentStepIndex - 1;
+      setCurrentStepIndex(prevStepIndex);
+      setTimeRemaining(steps[prevStepIndex].duration);
+      setIsRunning(false);
+      setIsPaused(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentStepIndex < totalSteps - 1) {
+      const nextStepIndex = currentStepIndex + 1;
+      setCurrentStepIndex(nextStepIndex);
+      setTimeRemaining(steps[nextStepIndex].duration);
+      setIsRunning(false);
+      setIsPaused(false);
+    } else {
+      // Last step - complete the recipe
+      onComplete?.();
+    }
   };
 
   const formatTime = (seconds: number): string => {
@@ -84,10 +113,10 @@ export function BrewingTimer({ steps, onComplete }: BrewingTimerProps) {
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-2">
               <Badge variant="default" className="text-lg px-4 py-1">
-                Step {currentStepIndex + 1} of {totalSteps}
+                {t('stepOf', { current: currentStepIndex + 1, total: totalSteps })}
               </Badge>
               <Badge variant="outline" className="text-lg px-4 py-1 capitalize">
-                {currentStep?.action}
+                {currentStep?.action && t(currentStep.action)}
               </Badge>
             </div>
 
@@ -96,18 +125,31 @@ export function BrewingTimer({ steps, onComplete }: BrewingTimerProps) {
               {currentStep?.description}
             </p>
 
-            {/* Timer Display */}
-            <div className="py-8">
-              <div className="text-7xl font-bold tabular-nums">
-                {formatTime(timeRemaining)}
-              </div>
-              <div className="text-sm text-muted-foreground mt-2">
-                {formatTime(elapsedTime)} / {formatTime(currentStep?.duration || 0)}
-              </div>
-            </div>
+            {/* Timer Display - only show for steps with timer */}
+            {hasTimer ? (
+              <>
+                <div className="py-8">
+                  <div className="text-7xl font-bold tabular-nums">
+                    {formatTime(timeRemaining)}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-2">
+                    {formatTime(elapsedTime)} / {formatTime(currentStep?.duration || 0)}
+                  </div>
+                </div>
 
-            {/* Progress Bar */}
-            <Progress value={progressPercentage} className="h-3" />
+                {/* Progress Bar */}
+                <Progress value={progressPercentage} className="h-3" />
+              </>
+            ) : (
+              <div className="py-8">
+                <div className="text-2xl font-semibold text-muted-foreground">
+                  {t('manualStep')}
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">
+                  {t('clickNextWhenReady')}
+                </div>
+              </div>
+            )}
 
             {/* Controls */}
             <div className="pt-4">
@@ -117,6 +159,11 @@ export function BrewingTimer({ steps, onComplete }: BrewingTimerProps) {
                 onStart={handleStart}
                 onPause={handlePause}
                 onReset={handleReset}
+                hasTimer={hasTimer}
+                onPrevious={handlePrevious}
+                onNext={handleNext}
+                canGoBack={currentStepIndex > 0}
+                canGoNext={currentStepIndex < totalSteps - 1}
               />
             </div>
           </div>
@@ -125,7 +172,7 @@ export function BrewingTimer({ steps, onComplete }: BrewingTimerProps) {
 
       {/* All Steps Overview */}
       <div className="space-y-3">
-        <h3 className="text-xl font-semibold">All Steps</h3>
+        <h3 className="text-xl font-semibold">{t('allSteps')}</h3>
         {steps.map((step, index) => {
           const isCompleted = index < currentStepIndex;
           const isCurrent = index === currentStepIndex;
@@ -177,7 +224,7 @@ export function BrewingTimer({ steps, onComplete }: BrewingTimerProps) {
                       variant="outline"
                       className="mt-2 text-xs capitalize"
                     >
-                      {step.action}
+                      {t(step.action)}
                     </Badge>
                   </div>
                 </div>

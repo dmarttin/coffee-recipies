@@ -17,7 +17,8 @@ export const recipes: Recipe[] = [
         title: 'Set up inverted',
         description: 'Place plunger in chamber at position 4, flip upside down. Add 15g medium-fine ground coffee.',
         duration: 30,
-        action: 'flip'
+        action: 'flip',
+        hasTimer: false
       },
       {
         id: 'inverted-2',
@@ -45,7 +46,8 @@ export const recipes: Recipe[] = [
         title: 'Attach filter & flip',
         description: 'Wet the filter, screw on cap, flip onto mug carefully.',
         duration: 15,
-        action: 'flip'
+        action: 'flip',
+        hasTimer: false
       },
       {
         id: 'inverted-6',
@@ -77,7 +79,8 @@ export const recipes: Recipe[] = [
         title: 'Setup',
         description: 'Place filter in cap, rinse with hot water. Add 11g medium-fine coffee to chamber on scale.',
         duration: 20,
-        action: 'pour'
+        action: 'pour',
+        hasTimer: false
       },
       {
         id: 'hoffmann-2',
@@ -144,7 +147,8 @@ export const recipes: Recipe[] = [
         title: 'Setup inverted',
         description: 'Set up Aeropress inverted (plunger at position 4). Add 30g coarse ground coffee.',
         duration: 30,
-        action: 'flip'
+        action: 'flip',
+        hasTimer: false
       },
       {
         id: 'cold-2',
@@ -172,7 +176,8 @@ export const recipes: Recipe[] = [
         title: 'Attach filter & flip',
         description: 'Wet paper filter, attach cap, flip onto container.',
         duration: 15,
-        action: 'flip'
+        action: 'flip',
+        hasTimer: false
       },
       {
         id: 'cold-6',
@@ -204,7 +209,8 @@ export const recipes: Recipe[] = [
         title: 'Setup',
         description: 'Use fine espresso grind. Rinse filter, add 17g coffee, level the bed.',
         duration: 15,
-        action: 'pour'
+        action: 'pour',
+        hasTimer: false
       },
       {
         id: 'espresso-2',
@@ -257,7 +263,8 @@ export const recipes: Recipe[] = [
         title: 'Setup',
         description: 'Rinse filter. Add 20g medium-fine coffee. Add 80ml hot water to serving cup.',
         duration: 20,
-        action: 'pour'
+        action: 'pour',
+        hasTimer: false
       },
       {
         id: 'bypass-2',
