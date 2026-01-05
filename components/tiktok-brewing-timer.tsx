@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RecipeStep } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
@@ -23,6 +23,15 @@ export function TikTokBrewingTimer({ steps, onComplete, onClose }: TikTokBrewing
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [direction, setDirection] = useState(0); // For animation direction
+
+  // Touch/swipe state
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Minimum swipe distance (px) to trigger navigation
+  const minSwipeDistance = 50;
 
   const currentStep = steps[currentStepIndex];
   const totalSteps = steps.length;
@@ -88,6 +97,112 @@ export function TikTokBrewingTimer({ steps, onComplete, onClose }: TikTokBrewing
     }
   };
 
+  // Debounced navigation to prevent rapid swipes
+  const navigateWithDebounce = useCallback((dir: 'next' | 'prev') => {
+    if (isNavigating) return;
+    setIsNavigating(true);
+
+    if (dir === 'next') {
+      handleNext();
+    } else {
+      handlePrevious();
+    }
+
+    setTimeout(() => setIsNavigating(false), 300);
+  }, [isNavigating]);
+
+  // Touch event handlers for swipe detection
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientY);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientY);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isSwipeUp = distance > minSwipeDistance;
+    const isSwipeDown = distance < -minSwipeDistance;
+
+    if (isSwipeUp) {
+      navigateWithDebounce('next');
+    } else if (isSwipeDown) {
+      navigateWithDebounce('prev');
+    }
+
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
+  // Mouse wheel handler for desktop
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let wheelTimeout: NodeJS.Timeout | null = null;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+
+      // Debounce wheel events
+      if (wheelTimeout) return;
+
+      wheelTimeout = setTimeout(() => {
+        wheelTimeout = null;
+      }, 300);
+
+      if (e.deltaY > 0) {
+        navigateWithDebounce('next');
+      } else if (e.deltaY < 0) {
+        navigateWithDebounce('prev');
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [navigateWithDebounce]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowDown':
+        case 'ArrowRight':
+          e.preventDefault();
+          navigateWithDebounce('next');
+          break;
+        case 'ArrowUp':
+        case 'ArrowLeft':
+          e.preventDefault();
+          navigateWithDebounce('prev');
+          break;
+        case ' ':
+        case 'Enter':
+          e.preventDefault();
+          toggleTimer();
+          break;
+        case 'Escape':
+          onClose?.();
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [navigateWithDebounce, toggleTimer, onClose]);
+
+  // Lock body scroll when component mounts
+  useEffect(() => {
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, []);
+
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -114,7 +229,10 @@ export function TikTokBrewingTimer({ steps, onComplete, onClose }: TikTokBrewing
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background overflow-hidden">
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-50 bg-background overflow-hidden touch-none"
+    >
       {/* Close Button */}
       {onClose && (
         <Button
@@ -154,6 +272,9 @@ export function TikTokBrewingTimer({ steps, onComplete, onClose }: TikTokBrewing
           exit="exit"
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           className="h-full w-full flex flex-col items-center justify-center px-6 py-20"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
           {/* Step Header */}
           <div className="text-center mb-8">
